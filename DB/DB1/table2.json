@@ -1,0 +1,1 @@
+{"table_name": "table2", "foreign_info": {"column_name": "id", "referenced_table": "table1", "referenced_column": "id"}, "columns": [{"col_name": "id", "col_type": "INT", "primary_key": "true"}, {"col_name": "name", "col_type": "STRING", "primary_key": "false"}]}
