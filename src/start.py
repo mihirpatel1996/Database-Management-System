@@ -9,6 +9,8 @@ from src.dbOperations import *
 # from src.createTable import *
 from src.tableOperations import *
 from src.sqlDumpOperation import *
+from src.parser import *
+from src.erdOperation import *
 
 
 class User(object):
@@ -97,6 +99,8 @@ def option_menu(user, dbName) -> User:
 
 def identifyQuery(user, query, dbName):
     # print("username in identifyQuery", user.username)
+    parser = parsor()
+    crud_keywords = ["INSERT", "insert", "SELECT", "select", "UPDATE", "update", "DELETE", "delete"]
     words = query.split(" ")
     if words[0] == "USE":
         db = useDbQuery(user, query)
@@ -130,6 +134,18 @@ def identifyQuery(user, query, dbName):
             print("please run USE DB command first")
         else:
             sqlDumpQuery(query, user)
+        option_menu(user, dbName)
+    elif words[0] in crud_keywords:
+        if dbName == "":
+            print("please run USE DB command first")
+        else:
+            parser.parsing(query)
+        option_menu(user, dbName)
+    elif words[0] == "CREATE" and words[1] == "ERD":
+        if dbName == "":
+            print("please run USE DB command first")
+        else:
+            erdQuery(query,user)
         option_menu(user, dbName)
     else:
         print("QUERY:", query, "not in correct format. Please check!")
