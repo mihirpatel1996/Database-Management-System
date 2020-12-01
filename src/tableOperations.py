@@ -1,34 +1,28 @@
-# class User(object):
-#     username = ""
 import re
 import json
 import os
 import csv
 
-def createTableQuery(dbName, query):
+from src.log_manager import write_log
+
+def createTableQuery(dbName, query, user):
     VALID_COL_TYPES = ["INT", "STRING", "DATE"]
     # query = "ADD USER user1 TO DB1;"
     # query = "CREATE TABLE table2 (id INT PRIMARY KEY, name STRING, FOREIGN KEY(id) REFERENCES table1(id));"
     # query = "CREATE TABLE table1 (id INT PRIMARY KEY, name STRING);"
-    # regex = r'ADD USER (.*) TO (.*);
     regex = r"CREATE TABLE (.*) \((.*)\);"
     createTableRegex = re.compile(regex)
     existing_tables = []
     for file in os.listdir("../DB/" + dbName):
         if file.endswith(".json"):
             existing_tables.append(file[:len(file)-5])
-    print("existing_tables",existing_tables)
     if re.match(regex, query):
-        print("query valid")
         data = createTableRegex.search(query)
         table_name = data.groups()[0]
-        # print("group 0 ", data.groups()[0])
-        print("match groups: ", data.groups(), type(data.groups()))
 
         if table_name in existing_tables:
             print("table:", table_name, "already exists")
         else:
-
             json_obj = {}
             json_obj['table_name'] = table_name
 
@@ -41,11 +35,9 @@ def createTableQuery(dbName, query):
             for col in columns:
                 col_info = {}
                 if "FOREIGN KEY" in col:
-                    # pass
                     foriegn_info = {}
                     print("foriegn key column")
                     foreign_regex = r'FOREIGN KEY\((.*)\) REFERENCES (.*)\((.*)\)'
-                    # foreign_regex = r'FOREIGN KEY(.*) REFERENCES (.*)'
                     foreignKeyRegex = re.compile(foreign_regex)
                     if re.match(foreign_regex, col):
                         foreign_data = foreignKeyRegex.search(col)
@@ -58,10 +50,6 @@ def createTableQuery(dbName, query):
                             foriegn_info['referenced_table'] = referenced_table
                             foriegn_info['referenced_column'] = referenced_col
                             json_obj['foreign_info'] = foriegn_info
-                            # pass
-                        # else:
-                        #     pass
-                        # pass
                     else:
                         print("Foriegn key syntax not proper")
                 else:
@@ -71,7 +59,6 @@ def createTableQuery(dbName, query):
                     if col_type not in VALID_COL_TYPES:
                         print("Column type", col_type, "invalid for column", col_name)
                     else:
-                        # print("Column type", col_type, "valid for column", col_name)
                         table_columns.append(col_name)
                         col_info['col_name'] = col_name
                         col_info['col_type'] = col_type
@@ -81,9 +68,8 @@ def createTableQuery(dbName, query):
                         col_info['primary_key'] = 'true'
                     else:
                         col_info['primary_key'] = 'false'
-            print("cols_data", cols_data)
-            print("table_columns", table_columns)
             json_obj['columns'] = cols_data
+            json_obj['locked_by'] = 'none'
 
 
             json_data = json.dumps(json_obj)
@@ -100,7 +86,7 @@ def createTableQuery(dbName, query):
                 tablecsv.flush()
             tablecsv.close()
 
-
+            write_log("User: " + user.username +" created table " + table_name + " with " + str(len(table_columns)) + " columns")
     else:
         print("invalid query, ", query)
 
@@ -138,34 +124,22 @@ def checkDbAndTableExists(dbName, tableName, columnName) -> bool:
                 if columnFound:
                     print("Column", columnName, "does not exists in", tableName)
                     return False
-            #     if columnName in cols:
-            #         return True
-            #     else:
-            #         print("Column", columnName, "does not exists in", tableName)
-            #         return False
-            # pass
         else:
             print("Table", tableName, "does not exists in", dbName)
             return False
-        #     pass
-        # print("5")
     except:
         print("db does not exists")
         return False
-    # return True
-
-# checkDbAndTableExists("DB1", "table2", "id")
-# start()
 
 def deleteTable(dbName, tableName) -> bool:
     dbPath = "../DB/" + dbName
-    # safe_to_delete = False
+    safe_to_delete = True
     try:
         existing_tables = []
         for file in os.listdir(dbPath):
             if file.endswith(".json"):
                 existing_tables.append(file[:len(file) - 5])
-        # print("existing_tables", existing_tables)
+        print("existing_tables", existing_tables)
         if tableName in existing_tables:
             for table in existing_tables:
                 with open(dbPath + "/" + table + ".json", 'r') as tablejson:
@@ -173,25 +147,22 @@ def deleteTable(dbName, tableName) -> bool:
                     if "foreign_info" in json_data:
                         if json_data['foreign_info']['referenced_table'] == tableName:
                             print(tableName, "has a foriegn key reference in", table, "table")
+                            safe_to_delete = False
                             return False
                         else:
                             print("table", tableName, "safe to delete")
                             return True
-        #                 return True
+            if safe_to_delete:
+                print("table", tableName, "safe to delete")
+                return True
         else:
             print("Table", tableName, "does not exists")
             return False
     except:
         print("db", dbName, "does not exists")
         return False
-    # return True
-# dbname = "DB1"
-# table_name = "table2"
-# if deleteTable(dbname, table_name):
-#     os.remove("../DB/" + dbname + "/" + table_name + ".csv")
-#     os.remove("../DB/" + dbname + "/" + table_name + ".json")
 
-def dropDb(dbName):
+def dropDb(dbName, user):
     dbPath = "../DB/" + dbName
     safe_to_delete = True
     try:
@@ -205,9 +176,35 @@ def dropDb(dbName):
         print("safe to drop db", dbName, safe_to_delete)
         if safe_to_delete:
             os.removedirs(dbPath)
+            write_log("User:" + user.username + " dropped database " + dbName)
     except:
         print("db", dbName, "does not exists")
 
+def deleteTableQuery(dbName, query, user):
+    regex = r'DROP TABLE (.*);'
+    createTableRegex = re.compile(regex)
+    if re.match(regex, query):
+        data = createTableRegex.match(query)
+        table_name = data.groups()[0]
+        if deleteTable(dbName, table_name):
+            os.remove("../DB/" + dbName + "/" + table_name + ".csv")
+            os.remove("../DB/" + dbName + "/" + table_name + ".json")
+            write_log("User:" + user.username + " dropped table " + table_name)
+    else:
+        print("DROP TABLE command not proper")
+
+def dropDbQuery(query, user):
+    regex = r'DROP DB (.*);'
+    dropDbRegex = re.compile(regex)
+    if re.match(regex, query):
+        data = dropDbRegex.match(query)
+        dbName = data.groups()[0]
+        dropDb(dbName, user)
+    else:
+        print("DROP DB command not proper")
 # dropDb("DB1")
-createTableQuery("DB1", "CREATE TABLE table1 (id INT PRIMARY KEY, name STRING);")
-createTableQuery("DB1", "CREATE TABLE table2 (id INT PRIMARY KEY, name STRING, FOREIGN KEY(id) REFERENCES table1(id));")
+# createTableQuery("DB1", "CREATE TABLE table1 (id INT PRIMARY KEY, name STRING);")
+# createTableQuery("DB1", "CREATE TABLE table2 (id INT PRIMARY KEY, name STRING, FOREIGN KEY(id) REFERENCES table1(id));")
+
+# deleteTableQuery("DB1", "DROP TABLE table1;")
+# deleteTableQuery("DB1", "DROP TABLE table2;")
