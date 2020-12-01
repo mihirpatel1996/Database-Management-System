@@ -8,7 +8,7 @@ from os import path
 class parsor:
 
     # INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
-    def insert(self, query):
+    def insert(self, query, db, user):
 
         # ------------------------------------print remove
         print("insert called")
@@ -18,6 +18,8 @@ class parsor:
         table_name_pattern1 = r"^INSERT\sINTO\s[\w]+\s\([\w\s,]+\)\sVALUES\s\([\w\W]+\);$"
         table_name_pattern2 = r"^INSERT\sINTO\s[\w]+\s\([\w,]+\)\sVALUES\s\([\w\W]+\);$"
         table_name_pattern3 = r"^insert\sinto\s[\w]+\s\([\w\s,]+\)\svalues\s\([\w\W]+\);$"
+        db_name = db
+        path = "../DB/"+db_name+"/"
         # findall matches gives matched query
         # table_syntax_check = re.findall(table_name_pattern, query)
         table_syntax_check1 = re.search(table_name_pattern1, query)
@@ -30,14 +32,20 @@ class parsor:
         else:
             print("syntax matched")
 
-        parsed_query = query.split(' ')
-        print("parsed_query:", parsed_query)
+        # check whether table exists or not
+        parsed_for_table_name = query.split(" ")
+        table_name = parsed_for_table_name[2]
+        full_path = path+table_name + ".csv"
+
+        if(os.path.exists(full_path) == False):
+            print("Table does not exist")
+            return
 
         parsed_query1 = query.split(",")
         print("parsed_query1:", parsed_query1)
 
         # syntax for insert length checked
-        if(len(parsed_query) <= 6):
+        if(len(parsed_query1) <= 6):
             print("Syntax Invalid")
             return
 
@@ -75,30 +83,6 @@ class parsor:
                 replaced_string = replaced_string.strip()
                 column_names.append(replaced_string)
 
-        """for i in range(3, len(parsed_query)):
-            if(parsed_query[i] == "VALUES" or parsed_query[i] == "values"):
-                break
-
-            if('(' in parsed_query[i]):
-                column_name_flag = True
-                replaced_string = parsed_query[i].replace("(", "")
-                replaced_string = replaced_string.replace(",", "")
-                # replaced_string = replaced_string.strip()
-                column_names.append(replaced_string)
-                continue
-
-            if(')' in parsed_query[i]):
-                replaced_string = parsed_query[i].replace(")", "")
-                replaced_string = replaced_string.replace(",", "")
-                # replaced_string = replaced_string.strip()
-                column_names.append(replaced_string)
-                column_name_flag = False
-
-            if(column_name_flag == True):
-                replaced_string = parsed_query[i].replace(",", "")
-                # replaced_string = replaced_string.strip()
-                column_names.append(replaced_string)"""
-
         # --------------------------------------print remove
         print("column_names: ", column_names)
 
@@ -127,23 +111,40 @@ class parsor:
 
         # ------------------------------------------------remove dictionary
         print(d)
-        # field_names = ['id', 'name', 'age']
-        # d = {'id': 1, 'name': "Mihir", 'age': 24}
-        # print(d)
 
+        # matching columns of table and query
+        df = pd.read_csv(full_path)
+        for col in df.columns:
+            print(col)
+
+        for i in range(0, len(column_names)):
+            if(column_names[i] not in df.columns):
+                print("columns not matched")
+                return
+
+        column_name = column_names[0]
+        column_value = values[0]
+        print("column name:", column_name)
+        print("column value:", column_value)
+        # checking for duplicate record
+        #print(df[df.column_name == column_value])
+        duplicate_df = df.loc[df[column_name] == column_value]
+        if not duplicate_df.empty:
+            print("Reccord Exist")
+            return
         # writing dictionary in file
         with open(r'../DB/DB1/table1.csv', 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=column_names)
-            writer.writeheader()
             writer.writerow(d)
             print("Row written to file")
-
         return
 
+    # ----------------------------------------------------------------------select-------------------------------
     # select query function
-    def select(self, query):
+    def select(self, query, db, user):
         print("print called")
-        path = "../DB/DB1/"
+        db_name = db
+        path = "../DB/"+db_name+"/"
         select_pattern1 = r"SELECT \* FROM [\w]+;"
         select_pattern2 = r"SELECT [\w,\s]+ FROM [\w]+;"
 
@@ -170,6 +171,7 @@ class parsor:
         if(select_check1 != None):
             print(df.to_string(index=False))
         else:
+
             parsed_query = query.split(" ")
             print(parsed_query)
 
@@ -177,6 +179,7 @@ class parsor:
             for i in range(1, len(parsed_query)):
                 if(parsed_query[i] == "FROM"):
                     break
+
                 s1 = parsed_query[i].replace(",", "")
                 s1 = s1.strip()
                 column_names.append(s1)
@@ -184,7 +187,66 @@ class parsor:
             print(column_names)
             df = df[column_names]
             print(df.to_string(index=False))
+            return
+    # ----------------------------------------------------------delete----------------------------------------
 
+    def delete(self, query, db, user):
+        print("delete called")
+        db_name = db
+        delete_pattern1 = r"DELETE FROM [\w]+ WHERE [\w]+\s\=\s[\w']+;"
+        path = "../DB/"+db_name+"/"
+
+        # syntax validation
+        delete_check1 = re.search(delete_pattern1, query)
+        if(delete_check1 == None):
+            print("Syntax Invalid")
+            return
+
+        # table name for path
+        parsed_for_table_name = query.split(" ")
+        table_name = parsed_for_table_name[2]
+        full_path = path+table_name+".csv"
+
+        # if table exists or not
+        if(os.path.exists(full_path) == False):
+            print("Table does not exist")
+            return
+
+        # splitting  query
+        parsed_query = query.split("=")
+        # ----------------------------------------remove print
+        print(parsed_query)
+
+        parsed_query[0] = parsed_query[0].strip()
+        temp_array = parsed_query[0].split(" ")
+        parsed_query[0] = temp_array[len(temp_array)-1]
+
+        for i in range(0, len(parsed_query)):
+            temp = parsed_query[i].replace("'", "")
+            parsed_query[i] = temp.replace(";", "")
+
+        # ---------------------------------------remove print
+        print(parsed_query)
+
+        # logic for delete
+        df = pd.read_csv(full_path, index_col=False)
+        print(df)
+        column_name = parsed_query[0]
+        column_value = parsed_query[1]
+        #new_df = df[df.parsed_query[0] != parsed_query[1]]
+        #print(df.loc[df[parsed_query[0]] != parsed_query[1]])
+        #new_df = df.loc[df[column_name] != column_value]
+        new_df = df[df.CustomerName != "Mihir"]
+        print(new_df)
+
+        '''# logic for delete
+        df = pd.read_csv(full_path, index_col=False)
+        print(df)
+        new_df = df[df.CustomerName != "Mihir"]
+        print(new_df)
+        new_df.to_csv('../DB/DB1/table1.csv', header=True, index=False)'''
+
+    # ---------------------------------------------------------------------------parsing------------------------------
     def parsing(self, query):
         # ---------------------------------------------------print remove
         print("parsing method called")
@@ -197,109 +259,45 @@ class parsor:
             self.update(query)
         if(parsed_query[0] == "SELECT"):
             self.select(query)
+        if(parsed_query[0] == "DELETE"):
+            self.delete(query)
 
-    def update(self, query):
-        print("update called")
-        update_pattern1 = r'UPDATE ([\w]*) SET (.*) WHERE (.*);'
-        # update_pattern2 = r'update (.*) set (.*) where (.*);'
-        # UPDATE Customers SET ContactName = 'Alfred Schmidt', City = 'Frankfurt' WHERE CustomerID = 1;
-        df = pd.read_csv("../DB/DB1/table1.csv")
-        print(df)
+    def update(self, query, db, user):
+        dbName = db
+        try:
+            update_pattern = r'UPDATE ([\w]*) SET (.*) WHERE (.*);'
+            updateRegex = re.compile(update_pattern)
+            if re.match(update_pattern, query):
+                data = updateRegex.search(query)
+                table_name = data.groups()[0]
+                update_info = data.groups()[1]
+                where_clause = data.groups()[2].split("=")
+                where_col = where_clause[0].strip()
+                where_val = where_clause[1].strip()
+                if "'" in where_val:
+                    where_val = where_val.replace("'", "")
 
-        update_query_check1 = re.search(update_pattern1, query)
-        # update_query_check2 = re.search(update_pattern2, query)
-        if(update_query_check1 == None):
-            print("Syntax Invalid")
-            return
-        # parsing of query for checking table exists or not
+                table_file = "../DB/" + dbName + "/" + table_name + ".csv"
+                if "," in update_info:
+                    update_item = update_info.split(",")
+                    for item in update_item:
+                        update_clause = item.split("=")
+                        update_col = update_clause[0].strip()
+                        update_val = update_clause[1].strip()
+                        if "'" in update_val:
+                            update_val = update_val.replace("'", "")
 
-        # parsing of query to check column exists or not
-        parsed_query_for_key = query.split('WHERE')
+                        df = pd.read_csv(table_file)
+                        df1 = df.loc[df[where_col] == where_val]
+                        # print("df1", len(df1.index))
+                        df.loc[df[where_col] == where_val,
+                               [update_col]] = update_val
+                        df.to_csv(table_file, index=False)
 
-        print("WhERE split array:", parsed_query_for_key)
-        # last value in array is where column cluase
-        where_clause = parsed_query_for_key[len(parsed_query_for_key)-1]
-        print("Id :", where_clause)
-        id_array = where_clause.split('=')
-        id_column = id_array[0].strip()
-        id_value = id_array[1].strip()
-        id_value = id_value.replace("'", "")
-        id_value = id_value.replace(";", "")
-        print("id column:", id_column+" id_value:", id_value)
-
-        # getting colums and values to replace
-        parsed_for_columns = query.split("'")
-        print("parsed by ' array:", parsed_for_columns)
-
-        column_value_array = []
-        for i in range(0, len(parsed_for_columns)):
-            if("WHERE" in parsed_for_columns[i]):
-                break
-            if("SET" in parsed_for_columns[i]):
-                print("SET matched:", parsed_for_columns[i])
-                space_split = parsed_for_columns[i].split("SET")
-                print("space split:", space_split)
-                s1 = space_split[len(space_split)-1]
-                s1 = s1.replace("=", "")
-                s1 = s1.strip()
-                column_value_array.append(s1)
-                continue
-            else:
-                # print("parsed_for_columns[%d]:%s" % (i, parsed_for_columns[i]))
-                s1 = parsed_for_columns[i].replace("'", "")
-                s1 = s1.replace(",", "")
-                s1 = s1.replace("=", "")
-                s1 = s1.strip()
-                print("col_val:", s1)
-                column_value_array.append(s1)
-
-        print("columns:", column_value_array)
-        # table columns
-        for col in df.columns:
-            print(col)
-
-        # df.set_index('CustomerName', inplace=True)
-        '''for i in range(0, len(df.columns)):
-            df.set_index(df.columns[0])
-            print(df.columns[i])'''
-
-        # checking id colummn exists or not in table
-        if(id_column in df.columns):
-            print("id column found")
-        else:
-            print("id column not found")
-        print("type of id:", type(id_column))
-        print("type of name:", type(id_value))
-
-        column_names = []
-        column_values = []
-        # getting column_names and values
-        for i in range(0, len(column_value_array)):
-            if(i % 2 == 0):
-                column_names.append(column_value_array[i])
-            else:
-                column_values.append(column_value_array[i])
-
-        print("column names:", column_names)
-        print("column values:", column_values)
-        # checking other column exist in table or not
-        # matched_columns = df.loc[[df[id_column] ==
-        #                          id_value], "City", "Address"] = "Frankfurk", "6967 Bayers road"
-        # df.at[id_value, column_names] = column_values
-        df = df.loc[df[id_column] == id_value]
-        # df.replace(to_replace="Address", value="quinpool towers")
-        # df.loc['Mihir', 'Address'] = 'quinpool towers'
-
-        df.replace(to_replace=['Mihir', ],
-                   value=['Michael'],
-                   inplace=True)
-        print(df)
-        # df.to_csv('../DB/DB1/table1.csv', mode='a', header=False, index=False)
-        print("Added")
-        # print("matched columns:\n", matched_columns)
-        # print(matched_records)
-        # INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
-        # UPDATE table1 SET City = 'Frankfurt', Address = 'Quinpool towers' WHERE CustomerName = 'Mihir';
+                # INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
+                # UPDATE table1 SET City = 'Frankfurt', Address = 'Quinpool towers' WHERE CustomerName = 'Mihir';
+        except:
+            print("update operation cannot be performed")
 
 
 def main():
