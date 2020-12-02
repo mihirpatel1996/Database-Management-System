@@ -116,7 +116,7 @@ class parsor:
             print("Reccord Exist")
             return
         # writing dictionary in file
-        with open(r'../DB/DB1/table1.csv', 'a', newline='') as file:
+        with open(full_path, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=column_names)
             writer.writerow(d)
             print("Row written to file")
@@ -225,9 +225,9 @@ class parsor:
 
         if(parsed_query[0] == "update" or parsed_query[0] == 'UPDATE'):
             self.update(query, db, user)
-        if(parsed_query[0] == "SELECT"):
+        if(parsed_query[0] == "SELECT" or parsed_query[0] == 'select'):
             self.select(query, db, user)
-        if(parsed_query[0] == "DELETE"):
+        if(parsed_query[0] == "DELETE" or parsed_query[0] == 'delete'):
             self.delete(query, db, user)
 
     def update(self, query, db, user):
