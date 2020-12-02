@@ -10,16 +10,12 @@ class parsor:
     # INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
     def insert(self, query, db, user):
 
-        # ------------------------------------print remove
-        print("insert called")
-
-        # table pattern does not match special charcters in VALUES
-        # table_name_pattern = r"^INSERT\sINTO\s[\w]+\s\([\w\s,]+\)\sVALUES\s\([\w\s,']+\);$"
         table_name_pattern1 = r"^INSERT\sINTO\s[\w]+\s\([\w\s,]+\)\sVALUES\s\([\w\W]+\);$"
         table_name_pattern2 = r"^INSERT\sINTO\s[\w]+\s\([\w,]+\)\sVALUES\s\([\w\W]+\);$"
         table_name_pattern3 = r"^insert\sinto\s[\w]+\s\([\w\s,]+\)\svalues\s\([\w\W]+\);$"
         db_name = db
         path = "../DB/"+db_name+"/"
+
         # findall matches gives matched query
         # table_syntax_check = re.findall(table_name_pattern, query)
         table_syntax_check1 = re.search(table_name_pattern1, query)
@@ -42,7 +38,7 @@ class parsor:
             return
 
         parsed_query1 = query.split(",")
-        print("parsed_query1:", parsed_query1)
+        # print("parsed_query1:", parsed_query1)
 
         # syntax for insert length checked
         if(len(parsed_query1) <= 6):
@@ -55,12 +51,12 @@ class parsor:
         column_names = []
 
         for i in range(0, len(parsed_query1)):
-            print("parsed_query value:", parsed_query1[i])
+            # print("parsed_query value:", parsed_query1[i])
 
             if(')' in parsed_query1[i]):
-                print(") matched:", parsed_query1[i])
+                # print(") matched:", parsed_query1[i])
                 parsed_array = parsed_query1[i].split(" ")
-                print("parsed_array:", parsed_array)
+                # print("parsed_array:", parsed_array)
                 for i in range(0, len(parsed_array)):
                     if(')' in parsed_array[i]):
                         replaced_string = parsed_array[i].replace(")", "")
@@ -70,7 +66,7 @@ class parsor:
 
             if('(' in parsed_query1[i]):
                 column_name_flag = True
-                print("( matched:", parsed_query1[i])
+                # print("( matched:", parsed_query1[i])
                 parsed_array = parsed_query1[i].split(" ")
                 replaced_string = parsed_array[len(
                     parsed_array)-1].replace("(", "")
@@ -82,9 +78,6 @@ class parsor:
                 replaced_string = parsed_query1[i].replace(",", "")
                 replaced_string = replaced_string.strip()
                 column_names.append(replaced_string)
-
-        # --------------------------------------print remove
-        print("column_names: ", column_names)
 
         # getting values from query
         values = []
@@ -98,9 +91,6 @@ class parsor:
             else:
                 values.append(parsed_values[i])
 
-        # --------------------------------------print remove
-        print("Values: ", values)
-
         # to check if column names and values match
         if(len(column_names) != len(values)):
             print("Invalid Syntax")
@@ -109,13 +99,8 @@ class parsor:
         d = {column_names[i]: values[i]
              for i in range(0, len(column_names), 1)}
 
-        # ------------------------------------------------remove dictionary
-        print(d)
-
         # matching columns of table and query
         df = pd.read_csv(full_path)
-        for col in df.columns:
-            print(col)
 
         for i in range(0, len(column_names)):
             if(column_names[i] not in df.columns):
@@ -124,10 +109,8 @@ class parsor:
 
         column_name = column_names[0]
         column_value = values[0]
-        print("column name:", column_name)
-        print("column value:", column_value)
+
         # checking for duplicate record
-        #print(df[df.column_name == column_value])
         duplicate_df = df.loc[df[column_name] == column_value]
         if not duplicate_df.empty:
             print("Reccord Exist")
@@ -142,18 +125,29 @@ class parsor:
     # ----------------------------------------------------------------------select-------------------------------
     # select query function
     def select(self, query, db, user):
-        print("print called")
+
         db_name = db
         path = "../DB/"+db_name+"/"
         select_pattern1 = r"SELECT \* FROM [\w]+;"
         select_pattern2 = r"SELECT [\w,\s]+ FROM [\w]+;"
+        select_pattern3 = r"select \* from [\w]+;"
+        select_pattern4 = r"select [\w,\s]+ from [\w]+;"
 
         select_check1 = re.search(select_pattern1, query)
         select_check2 = re.search(select_pattern2, query)
+        select_check3 = re.search(select_pattern3, query)
+        select_check4 = re.search(select_pattern4, query)
 
-        if(select_check1 == None and select_check2 == None):
-            print("Syntax Invalid")
-            return
+        parsed_for_letters = query.split(" ")
+        if(parsed_for_letters[0] == "SELECT"):
+            if(select_check1 == None and select_check2 == None):
+                print("Syntax Invalid")
+                return
+        if(parsed_for_letters[0] == "select"):
+            print(parsed_for_letters[0])
+            if(select_check3 == None and select_check4 == None):
+                print("Syntax Invalid")
+                return
 
         # table name for path
         parsed_for_table_name = query.split(" ")
@@ -168,37 +162,45 @@ class parsor:
 
         df = pd.read_csv(full_path, index_col=False)
 
-        if(select_check1 != None):
+        if(select_check1 != None or select_check3 != None):
             print(df.to_string(index=False))
-        else:
 
+        else:
             parsed_query = query.split(" ")
-            print(parsed_query)
+            # print(parsed_query)
 
             column_names = []
             for i in range(1, len(parsed_query)):
-                if(parsed_query[i] == "FROM"):
+                if(parsed_query[i] == "FROM" or parsed_query[i] == "from"):
                     break
 
                 s1 = parsed_query[i].replace(",", "")
                 s1 = s1.strip()
                 column_names.append(s1)
 
-            print(column_names)
+            # matching columns of table and query
+            for c in column_names:
+                if(c not in df.columns):
+                    print("Column does not exist")
+                    return
+
+            # print(column_names)
             df = df[column_names]
             print(df.to_string(index=False))
             return
     # ----------------------------------------------------------delete----------------------------------------
 
     def delete(self, query, db, user):
-        print("delete called")
         db_name = db
         delete_pattern1 = r"DELETE FROM [\w]+ WHERE [\w]+\s\=\s[\w']+;"
+        delete_pattern2 = r"delete from [\w]+ where [\w]+\s\=\s[\w']+;"
         path = "../DB/"+db_name+"/"
 
         # syntax validation
         delete_check1 = re.search(delete_pattern1, query)
-        if(delete_check1 == None):
+        delete_check2 = re.search(delete_pattern2, query)
+
+        if(delete_check1 == None and delete_check2 == None):
             print("Syntax Invalid")
             return
 
@@ -214,8 +216,6 @@ class parsor:
 
         # splitting  query
         parsed_query = query.split("=")
-        # ----------------------------------------remove print
-        print(parsed_query)
 
         parsed_query[0] = parsed_query[0].strip()
         temp_array = parsed_query[0].split(" ")
@@ -223,50 +223,69 @@ class parsor:
 
         for i in range(0, len(parsed_query)):
             temp = parsed_query[i].replace("'", "")
+            temp = temp.strip()
             parsed_query[i] = temp.replace(";", "")
 
-        # ---------------------------------------remove print
-        print(parsed_query)
+        # matching columns of table and query
+        df = pd.read_csv(full_path)
+
+        if(parsed_query[0] not in df.columns):
+            print("Column not found")
+            return
 
         # logic for delete
-        df = pd.read_csv(full_path, index_col=False)
-        print(df)
         column_name = parsed_query[0]
         column_value = parsed_query[1]
-        #new_df = df[df.parsed_query[0] != parsed_query[1]]
-        #print(df.loc[df[parsed_query[0]] != parsed_query[1]])
-        #new_df = df.loc[df[column_name] != column_value]
-        new_df = df[df.CustomerName != "Mihir"]
-        print(new_df)
+        matched_df = df.loc[df[column_name] == column_value]
 
-        '''# logic for delete
-        df = pd.read_csv(full_path, index_col=False)
-        print(df)
-        new_df = df[df.CustomerName != "Mihir"]
-        print(new_df)
-        new_df.to_csv('../DB/DB1/table1.csv', header=True, index=False)'''
+        if(matched_df.empty == True):
+            print("Nothing matched")
+            return
+
+        new_df = df.loc[df[column_name] != column_value]
+
+        new_df.to_csv(full_path, header=True, index=False)
+        print("deleted successfully")
+        return
 
     # ---------------------------------------------------------------------------parsing------------------------------
     def parsing(self, query):
-        # ---------------------------------------------------print remove
-        print("parsing method called")
+
         query = query.strip()
         parsed_query = query.split(" ")
         if(parsed_query[0] == "INSERT" or parsed_query[0] == 'insert'):
-            self.insert(query)
+            self.insert(query, "DB1", "user")
 
         if(parsed_query[0] == "update" or parsed_query[0] == 'UPDATE'):
-            self.update(query)
-        if(parsed_query[0] == "SELECT"):
-            self.select(query)
-        if(parsed_query[0] == "DELETE"):
-            self.delete(query)
+            self.update(query, "DB1", "user")
+
+        if(parsed_query[0] == "SELECT" or parsed_query[0] == "select"):
+            self.select(query, "DB1", "user")
+
+        if(parsed_query[0] == "DELETE" or parsed_query[0] == "delete"):
+            self.delete(query, "DB1", "user")
+
+    # ------------------------------------------------------------update-----------------------------
 
     def update(self, query, db, user):
         dbName = db
+        path = "../DB/"+dbName+"/"
         try:
             update_pattern = r'UPDATE ([\w]*) SET (.*) WHERE (.*);'
+            update_pattern2 = r'update ([\w]*) set (.*) where (.*);'
             updateRegex = re.compile(update_pattern)
+
+            # table exist or not
+            if(re.search(update_pattern, query) or re.search(update_pattern2, query)):
+                parsed_for_table_name = query.split(" ")
+                table_name = parsed_for_table_name[1]
+                full_path = path+table_name+".csv"
+
+                # if table exists or not
+                if(os.path.exists(full_path) == False):
+                    print("Table does not exist")
+                    return
+
             if re.match(update_pattern, query):
                 data = updateRegex.search(query)
                 table_name = data.groups()[0]
@@ -293,9 +312,7 @@ class parsor:
                         df.loc[df[where_col] == where_val,
                                [update_col]] = update_val
                         df.to_csv(table_file, index=False)
-
-                # INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
-                # UPDATE table1 SET City = 'Frankfurt', Address = 'Quinpool towers' WHERE CustomerName = 'Mihir';
+                    print("Table updated")
         except:
             print("update operation cannot be performed")
 
