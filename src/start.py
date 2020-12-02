@@ -35,7 +35,6 @@ class User(object):
         password = input("Enter Password: ")
         df = pd.read_csv("../users.csv")
         existing_users = df["user"].tolist()
-        print("existing_users", existing_users)
         with open('../users.csv', 'a+') as file:
             if username not in existing_users:
                 writer = csv.writer(file)
@@ -67,7 +66,7 @@ def initPrompt(user) -> User:
             # break
         elif option == "2":
             user.doSignUp()
-            break
+            initPrompt(user)
         elif option == "3":
             # perform cleanup tasks here
             sys.exit()
@@ -78,7 +77,6 @@ def initPrompt(user) -> User:
 
 
 def option_menu(user, dbName) -> User:
-    print("in option menu, user", user.username)
     while True:
         print("Select a option please")
         print("1. Write Query")

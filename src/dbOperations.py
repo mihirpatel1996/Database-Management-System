@@ -6,32 +6,35 @@ from src.start import *
 from src.log_manager import write_log
 
 def useDbQuery(user, query) -> str:
-    dbList = [ item for item in os.listdir("../DB") if os.path.isdir(os.path.join("../DB", item)) ]
-    words = query.split(" ")
-    if len(words) == 2 and query.endswith(";"):
-        dbname = words[1][:-1]
-        print("dbname: ", dbname)
-        if dbname in dbList:
-            dir = "../DB/" + dbname
-            with open(dir + "/dbuser.csv", "r+") as userfile:
-                userList = userfile.readlines()
-            userList = [x.strip() for x in userList]
-            userfile.close()
-            if user.username in userList:
-                print("access granted for user", user.username, " to database ", dbname)
+    try:
+        dbList = [ item for item in os.listdir("../DB") if os.path.isdir(os.path.join("../DB", item)) ]
+        words = query.split(" ")
+        if len(words) == 2 and query.endswith(";"):
+            dbname = words[1][:-1]
+            print("dbname: ", dbname)
+            if dbname in dbList:
+                dir = "../DB/" + dbname
+                with open(dir + "/dbuser.csv", "r+") as userfile:
+                    userList = userfile.readlines()
+                userList = [x.strip() for x in userList]
+                userfile.close()
+                if user.username in userList:
+                    print("access granted for user", user.username, " to database ", dbname)
 
-                write_log("access granted for user" + user.username + " to database " + dbname)
-                return dbname
+                    write_log("access granted for user" + user.username + " to database " + dbname)
+                    return dbname
+                else:
+                    print("access not granted for user", user.username, " to database ", dbname)
+                    return dbname
             else:
-                print("access not granted for user", user.username, " to database ", dbname)
-                return dbname
-        else:
-            print(dbname, " database does not exists. Please create one.")
-            return ""
+                print(dbname, " database does not exists. Please create one.")
+                return ""
 
-    else:
-        print("Incorrect syntax for USE DB query")
-        return ""
+        else:
+            print("Incorrect syntax for USE DB query")
+            return ""
+    except:
+        print("USE DB command cannot run")
 
 
 def addUserToDbQuery(user, query):
@@ -51,7 +54,6 @@ def addUserToDbQuery(user, query):
                     userList = userfile.readlines()
 
                     userList = [x.strip() for x in userList]
-                    print("userlist in add user to db", userList)
                     if len(userList) >= 2:
                         print("Already two users have access to database ", db)
 
