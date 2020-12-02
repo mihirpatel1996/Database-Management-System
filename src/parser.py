@@ -129,9 +129,9 @@ class parsor:
         db_name = db
         path = "../DB/"+db_name+"/"
         select_pattern1 = r"SELECT \* FROM [\w]+;"
-        select_pattern2 = r"SELECT [\w,\s]+ FROM [\w]+;"
+        select_pattern2 = r"SELECT (.*) FROM [\w]+;"
         select_pattern3 = r"select \* from [\w]+;"
-        select_pattern4 = r"select [\w,\s]+ from [\w]+;"
+        select_pattern4 = r"select (.*) from [\w]+;"
 
         select_check1 = re.search(select_pattern1, query)
         select_check2 = re.search(select_pattern2, query)
