@@ -1,1 +1,1 @@
-//contians table structure
+{"table_name": "table1", "columns": [{"col_name": "id", "col_type": "INT", "primary_key": "true"}, {"col_name": "name", "col_type": "STRING", "primary_key": "false"}]}

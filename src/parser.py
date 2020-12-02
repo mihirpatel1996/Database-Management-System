@@ -316,6 +316,41 @@ class parsor:
         except:
             print("update operation cannot be performed")
 
+    def update(self, query):
+        dbName = "DB1"
+        try:
+            update_pattern = r'UPDATE ([\w]*) SET (.*) WHERE (.*);'
+            updateRegex = re.compile(update_pattern)
+            if re.match(update_pattern, query):
+                data = updateRegex.search(query)
+                table_name = data.groups()[0]
+                update_info = data.groups()[1]
+                where_clause = data.groups()[2].split("=")
+                where_col = where_clause[0].strip()
+                where_val = where_clause[1].strip()
+                if "'" in where_val:
+                    where_val = where_val.replace("'", "")
+
+                table_file = "../DB/" + dbName + "/" + table_name + ".csv"
+                if "," in update_info:
+                    update_item = update_info.split(",")
+                    for item in update_item:
+                        update_clause = item.split("=")
+                        update_col = update_clause[0].strip()
+                        update_val = update_clause[1].strip()
+                        if "'" in update_val:
+                            update_val = update_val.replace("'", "")
+
+                        df = pd.read_csv(table_file)
+                        df1 = df.loc[df[where_col] == where_val]
+                        # print("df1", len(df1.index))
+                        df.loc[df[where_col] == where_val, [update_col]] = update_val
+                        df.to_csv(table_file, index=False)
+
+                # INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
+                # UPDATE table1 SET City = 'Frankfurt', Address = 'Quinpool towers' WHERE CustomerName = 'Mihir';
+        except:
+            print("update operation cannot be performed")
 
 def main():
 
