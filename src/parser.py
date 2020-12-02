@@ -192,80 +192,43 @@ class parsor:
 
     def delete(self, query, db, user):
         db_name = db
-        delete_pattern1 = r"DELETE FROM [\w]+ WHERE [\w]+\s\=\s[\w']+;"
-        delete_pattern2 = r"delete from [\w]+ where [\w]+\s\=\s[\w']+;"
+        delete_pattern = r"DELETE FROM (.*) WHERE (.*) = (.*);"
+        updateRegex = re.compile(delete_pattern)
         path = "../DB/"+db_name+"/"
 
-        # syntax validation
-        delete_check1 = re.search(delete_pattern1, query)
-        delete_check2 = re.search(delete_pattern2, query)
+        try:
+            if re.match(delete_pattern, query):
+                data = updateRegex.search(query)
+                table_name = data.groups()[0]
+                where_col = data.groups()[1]
+                where_val = data.groups()[2]
+                if "'" in where_val:
+                    where_val = where_val.replace("'", "")
 
-        if(delete_check1 == None and delete_check2 == None):
-            print("Syntax Invalid")
-            return
+                table_file = path + table_name + ".csv"
+                df = pd.read_csv(table_file, index_col=where_col)
 
-        # table name for path
-        parsed_for_table_name = query.split(" ")
-        table_name = parsed_for_table_name[2]
-        full_path = path+table_name+".csv"
+                df.drop([where_val], inplace=True)
 
-        # if table exists or not
-        if(os.path.exists(full_path) == False):
-            print("Table does not exist")
-            return
-
-        # splitting  query
-        parsed_query = query.split("=")
-
-        parsed_query[0] = parsed_query[0].strip()
-        temp_array = parsed_query[0].split(" ")
-        parsed_query[0] = temp_array[len(temp_array)-1]
-
-        for i in range(0, len(parsed_query)):
-            temp = parsed_query[i].replace("'", "")
-            temp = temp.strip()
-            parsed_query[i] = temp.replace(";", "")
-
-        # matching columns of table and query
-        df = pd.read_csv(full_path)
-
-        if(parsed_query[0] not in df.columns):
-            print("Column not found")
-            return
-
-        # logic for delete
-        column_name = parsed_query[0]
-        column_value = parsed_query[1]
-        matched_df = df.loc[df[column_name] == column_value]
-
-        if(matched_df.empty == True):
-            print("Nothing matched")
-            return
-
-        new_df = df.loc[df[column_name] != column_value]
-
-        new_df.to_csv(full_path, header=True, index=False)
-        print("deleted successfully")
-        return
+                df.to_csv(table_file)
+        except:
+            print("DELETE operation cannot be performed")
 
     # ---------------------------------------------------------------------------parsing------------------------------
-    def parsing(self, query):
-
+    def parsing(self, query, db, user):
+        # ---------------------------------------------------print remove
+        print("parsing method called")
         query = query.strip()
         parsed_query = query.split(" ")
         if(parsed_query[0] == "INSERT" or parsed_query[0] == 'insert'):
-            self.insert(query, "DB1", "user")
+            self.insert(query, db, user)
 
         if(parsed_query[0] == "update" or parsed_query[0] == 'UPDATE'):
-            self.update(query, "DB1", "user")
-
-        if(parsed_query[0] == "SELECT" or parsed_query[0] == "select"):
-            self.select(query, "DB1", "user")
-
-        if(parsed_query[0] == "DELETE" or parsed_query[0] == "delete"):
-            self.delete(query, "DB1", "user")
-
-    # ------------------------------------------------------------update-----------------------------
+            self.update(query, db, user)
+        if(parsed_query[0] == "SELECT"):
+            self.select(query, db, user)
+        if(parsed_query[0] == "DELETE"):
+            self.delete(query, db, user)
 
     def update(self, query, db, user):
         dbName = db
@@ -365,7 +328,7 @@ def main():
         print("query called")
         query = input("Enter Query: ")
         p = parsor()
-        p.parsing(query)
+        p.parsing(query, "DB1", "")
 
     def logout():
         print("Logout function called")
