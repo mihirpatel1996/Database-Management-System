@@ -119,7 +119,6 @@ class parsor:
             print("Reccord Exist")
             return
         # writing dictionary in file
-        # print("full_path in insert query", full_path)
 
         with open(full_path, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=column_names)
@@ -138,9 +137,9 @@ class parsor:
         db_name = db
         path = "../DB/"+db_name+"/"
         select_pattern1 = r"SELECT \* FROM [\w]+;"
-        select_pattern2 = r"SELECT [\w,\s]+ FROM [\w]+;"
+        select_pattern2 = r"SELECT (.*) FROM [\w]+;"
         select_pattern3 = r"select \* from [\w]+;"
-        select_pattern4 = r"select [\w,\s]+ from [\w]+;"
+        select_pattern4 = r"select (.*) from [\w]+;"
 
         select_check1 = re.search(select_pattern1, query)
         select_check2 = re.search(select_pattern2, query)
@@ -247,9 +246,9 @@ class parsor:
 
         if(parsed_query[0] == "update" or parsed_query[0] == 'UPDATE'):
             self.update(query, db, user)
-        if(parsed_query[0] == "SELECT"):
+        if(parsed_query[0] == "SELECT" or parsed_query[0] == 'select'):
             self.select(query, db, user)
-        if(parsed_query[0] == "DELETE"):
+        if(parsed_query[0] == "DELETE" or parsed_query[0] == 'delete'):
             self.delete(query, db, user)
 
     def update(self, query, db, user):
