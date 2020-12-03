@@ -3,13 +3,16 @@ import re
 import pandas as pd
 import os.path
 from os import path
+from time import time
 
+from src.log_manager import *
 
 class parsor:
 
     # INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
     def insert(self, query, db, user):
 
+        start_time = time()
         table_name_pattern1 = r"^INSERT\sINTO\s[\w]+\s\([\w\s,]+\)\sVALUES\s\([\w\W]+\);$"
         table_name_pattern2 = r"^INSERT\sINTO\s[\w]+\s\([\w,]+\)\sVALUES\s\([\w\W]+\);$"
         table_name_pattern3 = r"^insert\sinto\s[\w]+\s\([\w\s,]+\)\svalues\s\([\w\W]+\);$"
@@ -116,16 +119,22 @@ class parsor:
             print("Reccord Exist")
             return
         # writing dictionary in file
-        with open(r'../DB/DB1/table1.csv', 'a', newline='') as file:
+        # print("full_path in insert query", full_path)
+
+        with open(full_path, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=column_names)
             writer.writerow(d)
-            print("Row written to file")
+            # print("Row written to file")
+
+        end_time = time()
+        time_diff = end_time - start_time
+        write_log("1 row inserted in " + table_name + " table in " + str(time_diff) + " seconds")
         return
 
     # ----------------------------------------------------------------------select-------------------------------
     # select query function
     def select(self, query, db, user):
-
+        start_time = time()
         db_name = db
         path = "../DB/"+db_name+"/"
         select_pattern1 = r"SELECT \* FROM [\w]+;"
@@ -187,37 +196,50 @@ class parsor:
             # print(column_names)
             df = df[column_names]
             print(df.to_string(index=False))
+            end_time = time()
+            time_diff = end_time - start_time
+            write_log(str(len(df.index.tolist())) + " rows fetched from" + table_name + " in " + str(time_diff) + " seconds")
             return
     # ----------------------------------------------------------delete----------------------------------------
 
     def delete(self, query, db, user):
+        # try:
+        start_time = time()
         db_name = db
         delete_pattern = r"DELETE FROM (.*) WHERE (.*) = (.*);"
         updateRegex = re.compile(delete_pattern)
         path = "../DB/"+db_name+"/"
 
-        try:
-            if re.match(delete_pattern, query):
-                data = updateRegex.search(query)
-                table_name = data.groups()[0]
-                where_col = data.groups()[1]
-                where_val = data.groups()[2]
-                if "'" in where_val:
-                    where_val = where_val.replace("'", "")
+        if re.match(delete_pattern, query):
+            data = updateRegex.search(query)
+            table_name = data.groups()[0]
+            where_col = data.groups()[1]
+            where_val = data.groups()[2]
+            if "'" in where_val:
+                where_val = where_val.replace("'", "")
 
-                table_file = path + table_name + ".csv"
-                df = pd.read_csv(table_file, index_col=where_col)
+            table_file = path + table_name + ".csv"
+            df = pd.read_csv(table_file, index_col=where_col)
+            initial_len = len(df.index.tolist())
 
-                df.drop([where_val], inplace=True)
+            # df1 = df.loc[df[where_col] == where_val]
 
-                df.to_csv(table_file)
-        except:
-            print("DELETE operation cannot be performed")
+            df.drop([where_val], inplace=True)
+            final_len = len(df.index.tolist())
+            rows_affected = str(initial_len - final_len)
+
+            df.to_csv(table_file)
+
+            end_time = time()
+            time_diff = end_time - start_time
+
+            write_log(rows_affected + " rows deleted from " + table_name + " in " + str(time_diff) + " seconds")
+        # except:
+        #     print("DELETE operation cannot be performed")
 
     # ---------------------------------------------------------------------------parsing------------------------------
     def parsing(self, query, db, user):
         # ---------------------------------------------------print remove
-        print("parsing method called")
         query = query.strip()
         parsed_query = query.split(" ")
         if(parsed_query[0] == "INSERT" or parsed_query[0] == 'insert'):
@@ -231,6 +253,7 @@ class parsor:
             self.delete(query, db, user)
 
     def update(self, query, db, user):
+        start_time = time()
         dbName = db
         path = "../DB/"+dbName+"/"
         try:
@@ -276,6 +299,10 @@ class parsor:
                                [update_col]] = update_val
                         df.to_csv(table_file, index=False)
                     print("Table updated")
+                    end_time = time()
+                    time_diff = end_time - start_time
+                    write_log(str(len(df1.index.tolist())) + " rows updated in table: " + table_name + " in " + str(time_diff) + " seconds")
+
         except:
             print("update operation cannot be performed")
 

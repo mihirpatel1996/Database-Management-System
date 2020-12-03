@@ -137,7 +137,7 @@ def identifyQuery(user, query, dbName):
         if dbName == "":
             print("please run USE DB command first")
         else:
-            parser.parsing(query)
+            parser.parsing(query, dbName, user)
         option_menu(user, dbName)
     elif words[0] == "CREATE" and words[1] == "ERD":
         if dbName == "":
