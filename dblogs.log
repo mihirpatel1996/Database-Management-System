@@ -1,1 +1,50 @@
-// time comment
+02/12/2020 01:29:10 user1 logged in
+02/12/2020 01:29:37 access granted for useruser1 to database CustDB
+02/12/2020 01:30:04 user1 logged in
+02/12/2020 01:30:19 access granted for useruser1 to database CustDB
+02/12/2020 01:30:23 User: user1 created table customers_foreign with 6 columns in 0.001997232437133789 time
+02/12/2020 01:55:48 user2 signed up
+02/12/2020 01:55:58 user3 signed up
+02/12/2020 01:56:25 user1 logged in
+02/12/2020 01:56:37 user2 logged in
+02/12/2020 01:57:13 User user1 given access to database CustDB
+02/12/2020 01:57:25 User user2 given access to database CustDB
+02/12/2020 01:58:09 access granted for useruser1 to database CustDB
+02/12/2020 01:58:20 user2 signed out
+02/12/2020 01:58:28 user3 logged in
+02/12/2020 01:58:47 user3 signed out
+02/12/2020 01:58:54 user2 logged in
+02/12/2020 01:59:01 access granted for useruser2 to database CustDB
+02/12/2020 01:59:16 User: user1 created table customers with 6 columns in 0.00199127197265625 time
+02/12/2020 01:59:42 User: user2 created table customers_foreign with 6 columns in 0.0019915103912353516 time
+02/12/2020 02:01:23 1 row inserted in customers table in 0.10305190086364746 seconds
+02/12/2020 02:02:04 1 row inserted in Customers table in 0.007967472076416016 seconds
+02/12/2020 02:02:14 1 row inserted in Customers table in 0.006987571716308594 seconds
+02/12/2020 02:05:52 3 rows fetched fromcustomers in 0.07180953025817871 seconds
+02/12/2020 02:10:39 user1 signed out
+02/12/2020 02:10:46 user2 signed out
+02/12/2020 02:15:57 user2 signed up
+02/12/2020 02:16:04 user3 signed up
+02/12/2020 02:16:33 user2 logged in
+02/12/2020 02:16:50 user1 logged in
+02/12/2020 02:17:27 User user1 given access to database CustDB
+02/12/2020 02:17:41 User user2 given access to database CustDB
+02/12/2020 02:18:17 access granted for useruser2 to database CustDB
+02/12/2020 02:18:25 user1 signed out
+02/12/2020 02:18:32 user3 logged in
+02/12/2020 02:18:50 user3 signed out
+02/12/2020 02:18:56 user1 logged in
+02/12/2020 02:18:58 access granted for useruser1 to database CustDB
+02/12/2020 02:19:10 User: user1 created table customers with 6 columns in 0.0019936561584472656 time
+02/12/2020 02:19:25 User: user2 created table customers_foreign with 6 columns in 0.00199127197265625 time
+02/12/2020 02:21:24 1 row inserted in customers table in 0.010506153106689453 seconds
+02/12/2020 02:21:37 1 row inserted in Customers table in 0.010971546173095703 seconds
+02/12/2020 02:21:50 1 row inserted in Customers table in 0.005986690521240234 seconds
+02/12/2020 02:26:03 user1 signed out
+02/12/2020 02:26:10 user1 logged in
+02/12/2020 02:26:51 access granted for useruser1 to database CustDB
+02/12/2020 02:26:59 3 rows fetched fromcustomers in 0.011943340301513672 seconds
+02/12/2020 02:28:26 1 rows updated in table: customers in 0.018949031829833984 seconds
+02/12/2020 02:29:20 1 rows deleted from customers in 0.011963844299316406 seconds
+02/12/2020 02:30:03 SQL DUMP created for database:CustDB
+02/12/2020 02:32:29 User:user1 dropped table customers_foreign

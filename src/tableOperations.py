@@ -2,6 +2,7 @@ import re
 import json
 import os
 import csv
+from time import time
 
 from src.log_manager import write_log
 
@@ -10,6 +11,7 @@ def createTableQuery(dbName, query, user):
     # query = "ADD USER user1 TO DB1;"
     # query = "CREATE TABLE table2 (id INT PRIMARY KEY, name STRING, FOREIGN KEY(id) REFERENCES table1(id));"
     # query = "CREATE TABLE table1 (id INT PRIMARY KEY, name STRING);"
+    start_time = time()
     regex = r"CREATE TABLE (.*) \((.*)\);"
     createTableRegex = re.compile(regex)
     existing_tables = []
@@ -27,21 +29,17 @@ def createTableQuery(dbName, query, user):
             json_obj['table_name'] = table_name
 
             columns = data.groups()[1].split(",")
-            print("columns ", columns, type(columns))
             columns = [col.strip() for col in columns]
-            print("columns ", columns, type(columns))
             cols_data = []
             table_columns = []
             for col in columns:
                 col_info = {}
                 if "FOREIGN KEY" in col:
                     foriegn_info = {}
-                    print("foriegn key column")
                     foreign_regex = r'FOREIGN KEY\((.*)\) REFERENCES (.*)\((.*)\)'
                     foreignKeyRegex = re.compile(foreign_regex)
                     if re.match(foreign_regex, col):
                         foreign_data = foreignKeyRegex.search(col)
-                        print("foreign_data", foreign_data.groups())
                         foreign_column = foreign_data.groups()[0]
                         referenced_table = foreign_data.groups()[1]
                         referenced_col = foreign_data.groups()[2]
@@ -63,7 +61,6 @@ def createTableQuery(dbName, query, user):
                         col_info['col_name'] = col_name
                         col_info['col_type'] = col_type
                         cols_data.append(col_info)
-                        print("col_info", col_info)
                     if "PRIMARY KEY" in col:
                         col_info['primary_key'] = 'true'
                     else:
@@ -73,7 +70,6 @@ def createTableQuery(dbName, query, user):
 
 
             json_data = json.dumps(json_obj)
-            print("json_data", json_data)
 
             with open("../DB/" + dbName + "/" + table_name + ".json", "w") as tablejson:
                 tablejson.write(json_data)
@@ -86,7 +82,9 @@ def createTableQuery(dbName, query, user):
                 tablecsv.flush()
             tablecsv.close()
 
-            write_log("User: " + user.username +" created table " + table_name + " with " + str(len(table_columns)) + " columns")
+            end_time = time()
+            time_diff = end_time - start_time
+            write_log("User: " + user.username +" created table " + table_name + " with " + str(len(table_columns)) + " columns in " + str(time_diff) + " time")
     else:
         print("invalid query, ", query)
 
@@ -98,21 +96,17 @@ def createTableQuery(dbName, query, user):
 #     print("after write", userfile.readlines())
 
 def checkDbAndTableExists(dbName, tableName, columnName) -> bool:
-    print("in checkDbAndTableExists")
     dbPath = "../DB/" + dbName
     try:
         existing_tables = []
         for file in os.listdir(dbPath):
             if file.endswith(".json"):
                 existing_tables.append(file[:len(file) - 5])
-        print("existing_tables", existing_tables)
         if tableName in existing_tables:
             columnFound = False
             with open(dbPath + "/" + tableName + ".json", "r") as tablecsv:
                 data = tablecsv.readline()
-                print("data", data)
                 data_json = json.loads(data)
-                print("data_json", data_json['columns'])
                 for column in data_json['columns']:
                     if column['col_name'] == columnName:
                         if column['primary_key'] == 'true':
@@ -139,7 +133,6 @@ def deleteTable(dbName, tableName) -> bool:
         for file in os.listdir(dbPath):
             if file.endswith(".json"):
                 existing_tables.append(file[:len(file) - 5])
-        print("existing_tables", existing_tables)
         if tableName in existing_tables:
             for table in existing_tables:
                 with open(dbPath + "/" + table + ".json", 'r') as tablejson:
@@ -173,12 +166,12 @@ def dropDb(dbName, user):
         for table in existing_tables:
             if not deleteTable(dbName, table):
                safe_to_delete = False
-        print("safe to drop db", dbName, safe_to_delete)
+        # print("safe to drop db", dbName, safe_to_delete)
         if safe_to_delete:
             os.removedirs(dbPath)
             write_log("User:" + user.username + " dropped database " + dbName)
     except:
-        print("db", dbName, "does not exists")
+        print("DROP DB cannot be performed")
 
 def deleteTableQuery(dbName, query, user):
     regex = r'DROP TABLE (.*);'
